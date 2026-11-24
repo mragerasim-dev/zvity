@@ -15,6 +15,13 @@
   html,body{margin:0;height:100%;background:#050b24;font-family:"Segoe UI",Arial,sans-serif}
   #f{position:fixed;inset:0;width:100%;height:100%;border:0;visibility:hidden;background:#fff}
   #f.on{visibility:visible}
+  /* плавний перехід: система проявляється, емблема «перелітає» на своє місце в меню */
+  #f.fade{opacity:0;transition:opacity .8s ease}
+  #f.fade.in{opacity:1}
+  #splash.fly{transition:opacity .7s ease .15s;opacity:0;pointer-events:none}
+  #splash.fly .sp-ring,#splash.fly .sp-glow,#splash.fly .sp-name,#splash.fly .sp-sub,#splash.fly .sp-bar{transition:opacity .35s ease,transform .35s ease;opacity:0;transform:translateY(-8px) scale(1.04)}
+  .sp-flyer{position:fixed;z-index:400;border-radius:50%;pointer-events:none;box-shadow:0 0 0 6px rgba(255,255,255,.9),0 20px 60px rgba(0,0,0,.45);
+            transition:left .85s cubic-bezier(.6,0,.2,1),top .85s cubic-bezier(.6,0,.2,1),width .85s cubic-bezier(.6,0,.2,1),height .85s cubic-bezier(.6,0,.2,1),box-shadow .85s ease}
     #splash { position: fixed; inset: 0; z-index: 200; display: flex; flex-direction: column; align-items: center; justify-content: center;
               background: radial-gradient(circle at 50% 42%, #1e3a8a 0%, #0b1a4a 55%, #050b24 100%); color: #fff;
               transition: opacity .6s ease, transform .6s ease; }
@@ -394,10 +401,42 @@
   function hideSplash() {
     var wait = first ? Math.max(0, 2600 - (Date.now() - t0)) : 0;
     setTimeout(function () {
-      document.getElementById("f").classList.add("on");
+      var f = document.getElementById("f");
+      if (first && flyLogo(f)) return;
+      f.classList.add("on");
       sp.classList.add("hide");
       setTimeout(function () { sp.remove(); }, 650);
     }, wait);
+  }
+  // Плавний перехід: емблема із заставки зменшується і перелітає туди, де вона стоїть у меню системи
+  function flyLogo(f) {
+    try {
+      if (window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches) return false;
+      var logo = sp.querySelector(".sp-logo"), doc = f.contentDocument;
+      var tgt = doc && doc.querySelector(".sb-brand .emblem-img");
+      if (!logo || !tgt) return false;
+      f.classList.add("fade", "on");
+      var tr = tgt.getBoundingClientRect();
+      if (!tr.width || !tr.height || tr.bottom < 0 || tr.top > innerHeight) { f.classList.remove("fade"); return false; }
+      var lr = logo.getBoundingClientRect(), fl = document.createElement("img");
+      fl.className = "sp-flyer"; fl.alt = ""; fl.src = logo.src;
+      fl.style.left = lr.left + "px"; fl.style.top = lr.top + "px"; fl.style.width = lr.width + "px"; fl.style.height = lr.height + "px";
+      document.body.appendChild(fl);
+      logo.style.visibility = "hidden";
+      tgt.style.visibility = "hidden";
+      sp.classList.add("fly");
+      requestAnimationFrame(function () { requestAnimationFrame(function () {
+        f.classList.add("in");
+        fl.style.left = tr.left + "px"; fl.style.top = tr.top + "px"; fl.style.width = tr.width + "px"; fl.style.height = tr.height + "px";
+        fl.style.boxShadow = getComputedStyle(tgt).boxShadow || "none";
+      }); });
+      setTimeout(function () {
+        tgt.style.visibility = "";
+        fl.remove(); sp.remove();
+        f.classList.remove("fade", "in");
+      }, 950);
+      return true;
+    } catch (e) { return false; }
   }
 
   // Усе після «#» — це шлях і параметри сторінки: #/k/<ключ>?page=vm

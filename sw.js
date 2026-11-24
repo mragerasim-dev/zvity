@@ -2,7 +2,7 @@
 // Зберігає на ПК лише оболонку сайту (заставку, значки), щоб застосунок запускався швидко.
 // Дані з Apps Script НЕ кешуються — завжди беруться свіжі з інтернету.
 // Щоб примусово оновити оболонку на всіх ПК, змініть номер версії нижче.
-const VERSION = "rs-shell-v2";
+const VERSION = "rs-shell-v3";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png", "./favicon-32.png"];
 
 self.addEventListener("install", e => {
